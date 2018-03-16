@@ -64,8 +64,11 @@ def orbital_velocity(a, period):
 def effective_velocity(v_orb, v):
     return np.sqrt(v_orb**2 + v**2)
 
-def standoff_distance(Mom, n, v_eff, T):
-    return 40 * R_J * ( ((Mom / Mom_J)**2) / ( ((n/n_J)*(v_eff/v_eff_J)) + ((2*(n/n_J)*kb*T)/(m_pr*(v_eff_J**2))) ) )**(1/6.)
+def standoff_distance(Mom, n, v_eff, T, R):
+    Rs = 40 * R_J * ( ((Mom / Mom_J)**2) / ( ((n/n_J)*(v_eff/v_eff_J)) + ((2*(n/n_J)*kb*T)/(m_pr*(v_eff_J**2))) ) )**(1/6.)
+    if Rs < R:
+        Rs = R
+    return Rs
 
 def core_radius(M, R):
     test_rc_frac = np.arange(0.01, 1.01, 0.01)
