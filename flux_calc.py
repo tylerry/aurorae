@@ -28,7 +28,7 @@ G = 6.674 * 10**-8              # cm3 g-1 s-2
 M_sol = 1.989 * 10**33          # g
 R_sol = 6.957 * 10**10          # cm
 R_earth = 6.371 * 10**8         # cm
-charge = 1.6 * 10**-19 * 3 * 10**9  # statC
+charge = 4.80320451 * 10**-10   # statC
 e0 = 1                          # 1 cgs
 mu0 = 1                         # 1 cgs
 Br0 = 2.6 * 10**-9 * 0.0001     # gauss
@@ -185,6 +185,8 @@ for row in data:
     mag_field.append(row.split(',')[31])                    # yes/no
 
 goodname = []
+goodmass = []
+goodradius = []
 goodmm = []
 goodplasma = []
 f = []
@@ -221,6 +223,8 @@ for i in range(len(name)):
     plasma = plasma_frequency(n)
     if plasma < freq:
         goodname.append(name[i])
+        goodmass.append(mass[i]/M_J)
+        goodradius.append(radius[i]/R_J)
         goodmm.append(mag_mom/Mom_J)
         f.append(freq*10**-6)
         phi_kin.append(kin_flux)
@@ -249,11 +253,11 @@ plt.title('Kinetic Model')
 # plt.title('Magnetic Model')
 # plt.show()
 
-plt.figure()
-plt.hist(goodmm, bins = 100)
-plt.ylim(0, 10)
-plt.show()
-pdb.set_trace()
+# plt.figure()
+# plt.hist(goodmm, bins = 100)
+# plt.ylim(0, 10)
+# plt.show()
+plt.close()
 
 
 print magnetic_moment(1.35*M_J, 1.08*R_J, .29*omega_J)/Mom_J
@@ -273,7 +277,7 @@ data2.readline()
 data2.readline()
 for row in data2:
     row = row.strip()
-    g7planet.append(row.split(';')[0])
+    g7planet.append(row.split(';')[0].rstrip())
     g7mass.append(float(row.split(';')[1]))
     g7radius.append(float(row.split(';')[2]))
     g7mm.append(float(row.split(';')[3]))
@@ -282,3 +286,66 @@ for row in data2:
     g7phimag.append(float(row.split(';')[6]))
     g7phikin.append(float(row.split(';')[7]))
     g7phicme.append(float(row.split(';')[8]))
+
+plt.figure(figsize=(8, 9))
+plt.subplot(321)
+for i in range(len(g7planet)):
+    for j in range(len(goodname)):
+        if g7planet[i] == goodname[j]:
+            plt.plot(g7mass[i], goodmass[j], 'ro')
+plt.plot([0, 25], [0, 25], 'k--')
+plt.ylabel('Richey-Yowell+ 19')
+plt.title('Jupiter Masses')
+
+plt.subplot(322)
+for i in range(len(g7planet)):
+    for j in range(len(goodname)):
+        if g7planet[i] == goodname[j]:
+            plt.plot(g7radius[i], goodradius[j], marker='o', color='orange')
+plt.plot([0, 2], [0, 2], 'k--')
+plt.title('Jupiter Radii')
+
+plt.subplot(323)
+for i in range(len(g7planet)):
+    for j in range(len(goodname)):
+        if g7planet[i] == goodname[j]:
+            plt.plot(g7mm[i], goodmm[j], marker='o', color='yellow')
+plt.ylabel('Richey-Yowell+ 19')
+plt.plot([0, 6], [0, 6], 'k--')
+plt.title('Jupiter MM')
+
+plt.subplot(324)
+for i in range(len(g7planet)):
+    for j in range(len(goodname)):
+        if g7planet[i] == goodname[j]:
+            plt.plot(g7fc[i], f[j], marker='o', color='green')
+plt.plot([0, 180], [0, 180], 'k--')
+plt.title('Observed Frequency [MHz]')
+
+plt.subplot(325)
+for i in range(len(g7planet)):
+    for j in range(len(goodname)):
+        if g7planet[i] == goodname[j]:
+            plt.plot(g7fp[i], goodplasma[j], marker='o', color='turquoise')
+plt.plot([0, 5], [0, 5], 'k--')
+plt.ylabel('Richey-Yowell+ 19')
+plt.xlabel('Griessmeier+ 07')
+plt.title('Plasma Frequency [MHz]')
+
+plt.subplot(326)
+for i in range(len(g7planet)):
+    for j in range(len(goodname)):
+        if g7planet[i] == goodname[j]:
+            plt.plot(g7phikin[i], phi_kin[j]*1000, marker='o', color='blue')
+plt.plot([0, 10], [0, 10], 'k--')
+plt.xlabel('Griessmeier+ 07')
+plt.title('Phi_Kin [mJy]')
+
+plt.subplots_adjust(left = 0.10, bottom = 0.06, right = 0.96, top = 0.96, wspace = 0.23, hspace = 0.26)
+
+# plt.tight_layout()
+plt.show()
+
+
+
+pdb.set_trace()
