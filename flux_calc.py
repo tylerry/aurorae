@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 
 n0 = 1.04 * 10**11 / 1000000    # cm-3
 v0 = 3971 * 100000              # cm s-1
-tau = 8.073 * 10**14     # s
-R_J = 69911 * 1000              # m         why?
+tau = 8.073 * 10**14            # s
+R_J = 7.149 * 10**9             # cm
 M_J = 1.898 * 10**27 * 1000     # g
 n_J = 2.0 * 10**5 / 1000000     # cm-3
 v_eff_J = 520 * 100000          # cm s-1
@@ -36,9 +36,10 @@ Bphi0 = 2.4 * 10**-9 * 0.0001   # gauss
 d0 = 1.496 * 10**13             # cm
 a_J = 778.57*10**11             # cm
 Rs_J = 63*R_J
+AU = 1.496 * 10**13             # cm
 
 def plasma_frequency(n):
-    return (1/(2*np.pi))*np.sqrt(n*charge**2 / (e0*m_el))  # s-1
+    return np.sqrt(4*np.pi*n*charge**2 / (m_el))  # s-1                         # changed from original
 
 def max_cyclotron_frequency(Mom, R):
     return 24.0 * 10**6 * (Mom / Mom_J) / ((R / R_J)**3)     # s-1
@@ -47,8 +48,8 @@ def max_cyclotron_frequency(Mom, R):
 def flux(P, s, deltaf):
     return (P/(Omega * s**2 * deltaf)) * 10**23        # Jy
 
-def particle_density(t):
-    return n0 * (1+(t/tau))**-1.86
+def particle_density(t, a):
+    return n0 * (1+(t/tau))**-1.86 * (a/AU)**-2                                 # added distance dependence based on Johnstone+ 15
 
 def stellar_wind_v(t):
     return v0 * (1+(t/tau))**-.43
@@ -108,7 +109,14 @@ def magnetic_moment(M, R, omega):
 
     p = (3*M) / (4*np.pi*(R**3))
     rc = kc * (M**.75) * (R**-0.96)
+    if rc > R:
+        rc = R
     mu = km*(p**.5)*omega*(rc**3.5)
+
+    if M == 1.45*M_J:
+        print p/pj
+        print rc/R
+
     moms.append(mu/Mom_J)
     return mu
 
@@ -129,15 +137,15 @@ def tau_sync(R, M, M_star, a):                  # being maybe problamatic
     return ((4/9.) * alpha * Qp * (R**3 / (G*M)) * omega_J * (M/M_star)**2. * (a/R)**6.) * 3.17098 * 10**-8 * 10**-6         # Myr
 
 def omega_rot(tsync, P_orb):
-    # if tsync <= 100:
-    #     print (2*np.pi / P_orb)/omega_J
-    #     print ' '
-    #     return 2*np.pi / P_orb
-    # else:
-    #     print (2*np.pi / P_orb)/omega_J
-    #     print ' '
-    #     return omega_J
-    return 2*np.pi / P_orb
+    if tsync <= 100:
+        print (2*np.pi / P_orb)/omega_J
+        print ' '
+        return 2*np.pi / P_orb
+    else:
+        print (2*np.pi / P_orb)/omega_J
+        print ' '
+        return omega_J
+    # return 2*np.pi / P_orb
 
 def B_imf_r(d):
     return Br0 * (d/d0)**-2
@@ -172,7 +180,7 @@ for row in data:
     name.append(row.split(',')[0])
     mass.append(float(row.split(',')[1]) * M_J)             # g
     radius.append(float(row.split(',')[3]) * R_J)           # cm
-    P_orb.append(float(row.split(',')[4]) * 86400)          # s
+    P_orb.append(float(row.split(',')[4]) * 86400.)          # s
     a.append(float(row.split(',')[5]) * 1.496*10**13)       # cm
     e.append(float(row.split(',')[6]))
     temp_calc.append(row.split(',')[11])
@@ -208,7 +216,7 @@ for i in range(len(name)):
     # print mag_mom/Mom_J
     temp.append(mag_mom/Mom_J)
     freq = max_cyclotron_frequency(mag_mom, radius[i])
-    n = particle_density(star_age[i])
+    n = particle_density(star_age[i], a[i])
     v = stellar_wind_v(star_age[i])
     v_orb = orbital_velocity(a[i], P_orb[i])
     v_eff = effective_velocity(v_orb, v)
@@ -260,7 +268,7 @@ plt.title('Kinetic Model')
 plt.close()
 
 
-print magnetic_moment(1.35*M_J, 1.08*R_J, .29*omega_J)/Mom_J
+print magnetic_moment(1.45*M_J, 1.23*R_J, 0.34*omega_J)/Mom_J
 
 g7planet = []       # Planet name
 g7mass = []         # Jupiter masses
@@ -303,6 +311,8 @@ for i in range(len(g7planet)):
         if g7planet[i] == goodname[j]:
             plt.plot(g7radius[i], goodradius[j], marker='o', color='orange')
 plt.plot([0, 2], [0, 2], 'k--')
+plt.xlim(0.5, 1.5)
+plt.ylim(0.5, 1.5)
 plt.title('Jupiter Radii')
 
 plt.subplot(323)
@@ -327,7 +337,8 @@ for i in range(len(g7planet)):
     for j in range(len(goodname)):
         if g7planet[i] == goodname[j]:
             plt.plot(g7fp[i], goodplasma[j], marker='o', color='turquoise')
-plt.plot([0, 5], [0, 5], 'k--')
+plt.plot([0, 1.4], [0, 1.4], 'k--')
+plt.xlim(0, 1.4)
 plt.ylabel('Richey-Yowell+ 19')
 plt.xlabel('Griessmeier+ 07')
 plt.title('Plasma Frequency [MHz]')
