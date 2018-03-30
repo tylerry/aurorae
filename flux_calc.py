@@ -257,3 +257,28 @@ pdb.set_trace()
 
 
 print magnetic_moment(1.35*M_J, 1.08*R_J, .29*omega_J)/Mom_J
+
+g7planet = []       # Planet name
+g7mass = []         # Jupiter masses
+g7radius = []       # Jupiter radii
+g7mm = []           # Jupiter magnetic moment
+g7fc = []           # MHz
+g7fp = []           # MHz
+g7phimag = []       # mJy
+g7phikin = []       # mJy
+g7phicme = []       # mJy
+data2 = open('griessmeier07.list', 'r')
+data2.readline()
+data2.readline()
+data2.readline()
+for row in data2:
+    row = row.strip()
+    g7planet.append(row.split(';')[0])
+    g7mass.append(float(row.split(';')[1]))
+    g7radius.append(float(row.split(';')[2]))
+    g7mm.append(float(row.split(';')[3]))
+    g7fc.append(float(row.split(';')[4]))
+    g7fp.append(float(row.split(';')[5]))
+    g7phimag.append(float(row.split(';')[6]))
+    g7phikin.append(float(row.split(';')[7]))
+    g7phicme.append(float(row.split(';')[8]))
