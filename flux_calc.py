@@ -83,12 +83,6 @@ def core_radius(M, R):
     test_rho = np.array(test_rho)
     dex = (np.abs(test_rho-0.7)).argmin()
     rc = test_rc_frac[dex] * R
-    # print ' '
-    # print M
-    # print R
-    # print rc / R
-    # print test_rho[0, dex]
-    # print ' '
     return rc
 
 moms = []
@@ -99,10 +93,7 @@ def magnetic_moment(M, R, omega):
     kc = rj / ((M_J**.75)*(R_J**-0.96))
     km = Mom_J / ((pj**.5) * omega_J * (rj**3.5))
 
-    # print ' '
-    # print Mom_J
     mu_check = km*(pj**.5)*omega_J*(rj**3.5)
-    # print mu_check
 
     # rc = core_radius(M, R)
     # p = ((np.pi*M) / (4*(R**3))) * (np.sin(np.pi * rc / R) / (np.pi * rc / R))
@@ -114,10 +105,7 @@ def magnetic_moment(M, R, omega):
     mu = km*(p**.5)*omega*(rc**3.5)
 
     if M == 1.45*M_J:
-        print p/pj
-        print rc/R
-
-    moms.append(mu/Mom_J)
+        moms.append(mu/Mom_J)
     return mu
 
 
@@ -138,12 +126,8 @@ def tau_sync(R, M, M_star, a):                  # being maybe problamatic
 
 def omega_rot(tsync, P_orb):
     if tsync <= 100:
-        print (2*np.pi / P_orb)/omega_J
-        print ' '
         return 2*np.pi / P_orb
     else:
-        print (2*np.pi / P_orb)/omega_J
-        print ' '
         return omega_J
     # return 2*np.pi / P_orb
 
@@ -172,6 +156,7 @@ star_age = []
 star_teff = []
 temp_calc = []
 mag_field = []
+discovered = []
 
 data = open('allplanets.csv', 'r')
 data.readline()
@@ -191,7 +176,19 @@ for row in data:
     star_age.append(float(row.split(',')[28]) * 3.16 * 10**16)  # s
     star_teff.append(float(row.split(',')[29]))
     mag_field.append(row.split(',')[31])                    # yes/no
+    discovered.append(float(row.split(',')[32]))
 
+min = min(discovered)
+max = max(discovered)
+for i in range(len(discovered)):
+    discovered[i] = (discovered[i] - min) / (max-min)
+colors = plt.cm.spectral(discovered)
+
+import matplotlib.patches as patches
+plt.figure()
+ax = plt.subplot(121)
+plt.xscale('log')
+plt.yscale('log')
 goodname = []
 goodmass = []
 goodradius = []
@@ -204,16 +201,10 @@ temp = []
 for i in range(len(name)):
     temp_eq = temp_eq_at_planet_surface(albedo[i], star_radius[i], star_teff[i], a[i], e[i])
     if radius[i] == 0:
-        # continue
-        # print 'didnt stop'
         radius[i] = radius_irradiated(mass[i], temp_eq)
-    # print radius[i]/R_J
     tsync = tau_sync(radius[i], mass[i], star_mass[i], a[i])
     omega = omega_rot(tsync, P_orb[i])
     mag_mom = magnetic_moment(mass[i], radius[i], omega)
-    # if mag_mom/Mom_J > 5.5:
-    #     continue
-    # print mag_mom/Mom_J
     temp.append(mag_mom/Mom_J)
     freq = max_cyclotron_frequency(mag_mom, radius[i])
     n = particle_density(star_age[i], a[i])
@@ -239,32 +230,28 @@ for i in range(len(name)):
         phi_mag.append(mag_flux)
         goodplasma.append(plasma*10**-6)
 
-import matplotlib.patches as patches
-plt.figure()
-# ax = plt.subplot(121)
-plt.xscale('log')
-plt.yscale('log')
-plt.plot(f, phi_kin, 'ro')
+
+plt.scatter(f, phi_kin, marker='o', c=colors)
 # ax.add_patch(patches.Rectangle((50, 2.5614), 150, 100, hatch='/', fill=False))
 plt.xlabel('frequency [MHz]')
 plt.ylabel('flux [Jy]')
 # plt.ylim(min(phi_kin), 10)
 plt.title('Kinetic Model')
 
-# plt.subplot(122)
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.plot(f, phi_mag, 'ro')
-# # plt.bar(125, height = 10**9, width = 75, bottom = 10**-12, color='none', edgecolor='none', hatch="/")
-# plt.xlabel('frequency [MHz]')
-# plt.ylabel('flux [Jy]')
-# plt.title('Magnetic Model')
-# plt.show()
+plt.subplot(122)
+plt.xscale('log')
+plt.yscale('log')
+plt.plot(f, phi_mag, 'ro')
+# plt.bar(125, height = 10**9, width = 75, bottom = 10**-12, color='none', edgecolor='none', hatch="/")
+plt.xlabel('frequency [MHz]')
+plt.ylabel('flux [Jy]')
+plt.title('Magnetic Model')
+plt.show()
 
-# plt.figure()
-# plt.hist(goodmm, bins = 100)
-# plt.ylim(0, 10)
-# plt.show()
+plt.figure()
+plt.hist(goodmm, bins = 100)
+plt.ylim(0, 10)
+plt.show()
 plt.close()
 
 
@@ -354,7 +341,6 @@ plt.title('Phi_Kin [mJy]')
 
 plt.subplots_adjust(left = 0.10, bottom = 0.06, right = 0.96, top = 0.96, wspace = 0.23, hspace = 0.26)
 
-# plt.tight_layout()
 plt.show()
 
 
