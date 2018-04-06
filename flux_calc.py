@@ -37,6 +37,7 @@ d0 = 1.496 * 10**13             # cm
 a_J = 778.57*10**11             # cm
 Rs_J = 63*R_J
 AU = 1.496 * 10**13             # cm
+f0 = 1.16
 
 def plasma_frequency(n):
     return np.sqrt(4*np.pi*n*charge**2 / (m_el))  # s-1                         # changed from original
@@ -58,7 +59,8 @@ def kin_input_power(n, v_eff, R_s):
     return ((n * v_eff**3 * R_s**2)/(n_J * v_eff_J**3 * Rs_J**2)) * P_radio_J
 
 def mag_input_power(v_eff, B_perp, R_s):
-    return 4.37871341691e+18 * (v_eff * B_perp**2 * R_s**2)
+    # return 4.37871341691e+18 * (v_eff * B_perp**2 * R_s**2)
+    return ((n * v_eff**3 * R_s**2)/(n_J * v_eff_J**3 * Rs_J**2)) * P_radio_J
 
 def orbital_velocity(a, period):
     return 2*np.pi*a / period
@@ -66,14 +68,12 @@ def orbital_velocity(a, period):
 def effective_velocity(v_orb, v):
     return np.sqrt(v_orb**2 + v**2)
 
-def standoff_distance(Mom, n, v_eff, a):
-    # Rs = 40 * R_J * ( ((Mom / Mom_J)**2) / ( ((n/n_J)*(v_eff/v_eff_J)) + ((2*(n/n_J)*kb*T)/(m_pr*(v_eff_J**2))) ) )**(1/6.)
-    # if Rs < R:
-    #     Rs = R
-    # return Rs
+def standoff_distance(Mom, n, v_eff, a, R):
+    Rs = ((mu0 * f0**2 * Mom**2)/(8 * np.pi**2 * m_pr * n * v_eff**2))**(1/6.)
+    if Rs < R:
+        Rs = R
+    return Rs
 
-
-    return ((Mom/Mom_J)**(1/3.) * (n/n_J)**(-1/6.) * (v_eff/v_eff_J)**(-1/3.) * (a/a_J)**-2.)*Rs_J
 def core_radius(M, R):
     test_rc_frac = np.arange(0.01, 1.01, 0.01)
     test_rho = []
@@ -95,9 +95,6 @@ def magnetic_moment(M, R, omega):
 
     mu_check = km*(pj**.5)*omega_J*(rj**3.5)
 
-    # rc = core_radius(M, R)
-    # p = ((np.pi*M) / (4*(R**3))) * (np.sin(np.pi * rc / R) / (np.pi * rc / R))
-
     p = (3*M) / (4*np.pi*(R**3))
     rc = kc * (M**.75) * (R**-0.96)
     if rc > R:
@@ -107,7 +104,6 @@ def magnetic_moment(M, R, omega):
     if M == 1.45*M_J:
         moms.append(mu/Mom_J)
     return mu
-
 
 def temp_eq_at_planet_surface(A, R_star, Teff_star, a, e):
     if A == 0:
@@ -121,7 +117,7 @@ def radius_irradiated(M, Teq):
     gamma = 1.15 + .05*(0.59*M_J / M)**1.03
     return Rni * (1 + .05*(Teq/T0)**gamma)
 
-def tau_sync(R, M, M_star, a):                  # being maybe problamatic
+def tau_sync(R, M, M_star, a):
     return ((4/9.) * alpha * Qp * (R**3 / (G*M)) * omega_J * (M/M_star)**2. * (a/R)**6.) * 3.17098 * 10**-8 * 10**-6         # Myr
 
 def omega_rot(tsync, P_orb):
@@ -129,7 +125,6 @@ def omega_rot(tsync, P_orb):
         return 2*np.pi / P_orb
     else:
         return omega_J
-    # return 2*np.pi / P_orb
 
 def B_imf_r(d):
     return Br0 * (d/d0)**-2
@@ -158,6 +153,7 @@ temp_calc = []
 mag_field = []
 discovered = []
 
+# data = open('allplanets_heraregime.csv', 'r')
 data = open('allplanets.csv', 'r')
 data.readline()
 for row in data:
@@ -184,11 +180,6 @@ for i in range(len(discovered)):
     discovered[i] = (discovered[i] - min) / (max-min)
 colors = plt.cm.spectral(discovered)
 
-import matplotlib.patches as patches
-plt.figure()
-ax = plt.subplot(121)
-plt.xscale('log')
-plt.yscale('log')
 goodname = []
 goodmass = []
 goodradius = []
@@ -196,7 +187,7 @@ goodmm = []
 goodplasma = []
 f = []
 phi_kin = []
-phi_mag = []
+# phi_mag = []
 temp = []
 for i in range(len(name)):
     temp_eq = temp_eq_at_planet_surface(albedo[i], star_radius[i], star_teff[i], a[i], e[i])
@@ -214,11 +205,11 @@ for i in range(len(name)):
     Bimfr = B_imf_r(a[i])
     Bimfphi = B_imf_phi(a[i])
     B = B_perpendicular(Bimfr, Bimfphi, v_orb, v)
-    R_s = standoff_distance(mag_mom, n, v_eff, a[i])
+    R_s = standoff_distance(mag_mom, n, v_eff, a[i], radius[i])
     P_radio_kin = kin_input_power(n, v_eff, R_s)
-    P_radio_mag = mag_input_power(v_eff, B, R_s)
+    # P_radio_mag = mag_input_power(v_eff, B, R_s)
     kin_flux = flux(P_radio_kin, star_dist[i], freq)
-    mag_flux = flux(P_radio_mag, star_dist[i], freq)
+    # mag_flux = flux(P_radio_mag, star_dist[i], freq)
     plasma = plasma_frequency(n)
     if plasma < freq:
         goodname.append(name[i])
@@ -227,30 +218,35 @@ for i in range(len(name)):
         goodmm.append(mag_mom/Mom_J)
         f.append(freq*10**-6)
         phi_kin.append(kin_flux)
-        phi_mag.append(mag_flux)
+        # phi_mag.append(mag_flux)
         goodplasma.append(plasma*10**-6)
 
-
-plt.scatter(f, phi_kin, marker='o', c=colors)
-# ax.add_patch(patches.Rectangle((50, 2.5614), 150, 100, hatch='/', fill=False))
-plt.xlabel('frequency [MHz]')
-plt.ylabel('flux [Jy]')
-# plt.ylim(min(phi_kin), 10)
-plt.title('Kinetic Model')
-
-plt.subplot(122)
+import matplotlib.patches as patches
+plt.figure()
+# plt.subplot(121)
 plt.xscale('log')
 plt.yscale('log')
-plt.plot(f, phi_mag, 'ro')
-# plt.bar(125, height = 10**9, width = 75, bottom = 10**-12, color='none', edgecolor='none', hatch="/")
+plt.scatter(f, phi_kin, marker='o', c=colors)
 plt.xlabel('frequency [MHz]')
 plt.ylabel('flux [Jy]')
-plt.title('Magnetic Model')
-plt.show()
+# plt.ylim(5*10**-8, 5*10)
+# plt.xlim(1, 1000)
+plt.fill_between([0,10],[10**-7,10**-1], facecolor="none", hatch="/", edgecolor="k", linewidth=0.0)
+plt.title('Kinetic Model')
+# plt.subplot(122)
+# # import Image
+# import matplotlib.image as mpimg
+# img_kin = mpimg.imread('kin.png')
+# plt.imshow(img_kin)
 
-plt.figure()
-plt.hist(goodmm, bins = 100)
-plt.ylim(0, 10)
+# plt.subplot(122)
+# plt.xscale('log')
+# plt.yscale('log')
+# plt.plot(f, phi_mag, 'ro')
+# # plt.bar(125, height = 10**9, width = 75, bottom = 10**-12, color='none', edgecolor='none', hatch="/")
+# plt.xlabel('frequency [MHz]')
+# plt.ylabel('flux [Jy]')
+# plt.title('Magnetic Model')
 plt.show()
 plt.close()
 
