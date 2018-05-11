@@ -155,28 +155,30 @@ ra = []
 dec = []
 
 # data = open('allplanets_heraregime.csv', 'r')
-data = open('allplanets.csv', 'r')
-# data = open('unconfirmed_catalog.csv', 'r')
+# data = open('allplanets.csv', 'r')
+data = open('unconfirmed_catalog.csv', 'r')
 data.readline()
 for row in data:
-    row = row.strip()
-    name.append(row.split(',')[0])
-    ra.append(row.split(',')[16])
-    dec.append(float(row.split(',')[17]))
-    mass.append(float(row.split(',')[1]) * M_J)             # g
-    radius.append(float(row.split(',')[3]) * R_J)           # cm
-    P_orb.append(float(row.split(',')[4]) * 86400.)          # s
-    a.append(float(row.split(',')[5]) * 1.496*10**13)       # cm
-    e.append(float(row.split(',')[6]))
-    temp_calc.append(row.split(',')[11])
-    albedo.append(float(row.split(',')[13]))
-    star_dist.append(float(row.split(',')[23]) * 3.086*10**18)  # cm
-    star_mass.append(float(row.split(',')[25]) * M_sol)         # g
-    star_radius.append(float(row.split(',')[26]) * R_sol)       # cm
-    star_age.append(float(row.split(',')[28]) * 3.16 * 10**16)  # s
-    star_teff.append(float(row.split(',')[29]))
-    mag_field.append(row.split(',')[31])                    # yes/no
-    discovered.append(float(row.split(',')[32]))
+    if ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,," not in row:
+        row = row.strip()
+        name.append(row.split(',')[0])
+        ra.append(row.split(',')[69])
+        dec.append(float(row.split(',')[70]))
+        mass.append(float(row.split(',')[2]) * M_J)             # g
+        radius.append(float(row.split(',')[8]) * R_J)           # cm
+        P_orb.append(float(row.split(',')[11]) * 86400.)          # s
+        a.append(float(row.split(',')[14]) * 1.496*10**13)       # cm
+        e.append(float(row.split(',')[17]))
+        temp_calc.append(row.split(',')[53])
+        albedo.append(float(row.split(',')[58]))
+        star_dist.append(float(row.split(',')[76]) * 3.086*10**18)  # cm
+        star_mass.append(float(row.split(',')[82]) * M_sol)         # g
+        star_radius.append(float(row.split(',')[85]) * R_sol)       # cm
+        star_age.append(float(row.split(',')[89]) * 3.16 * 10**16)  # s
+        star_teff.append(float(row.split(',')[92]))
+        mag_field.append(row.split(',')[96])                    # yes/blank
+        discovered.append(float(row.split(',')[24]))
+
 
 
 goodname = []
@@ -222,13 +224,15 @@ for i in range(len(name)):
         goodradius.append(radius[i]/R_J)
         goodmm.append(mag_mom/Mom_J)
         f.append(freq*10**-6)
-        phi_kin.append(kin_flux)
-        phi_mag.append(mag_flux)
+        phi_kin.append(kin_flux*1000)
+        phi_mag.append(mag_flux*1000)
         goodplasma.append(plasma*10**-6)
         goodstarage.append(star_age[i]/ (3.16 * 10**16))
 
-final = Table([goodname, goodra, gooddec, goodmass, goodradius, goodmm, goodplasma, f, phi_kin, phi_mag], names=['NAME', 'RA', 'DEC', 'MASS [Mj]', 'RADIUS [Rj]', 'MAG_MOM [MMj]', 'PLASMA_FRQ [MHz]', 'FRQ [MHz]', 'PHI_KIN [Jy]', 'PHI_MAG [Jy]'])
-ascii.write(final, 'all_results_confirmed.csv', format='csv')
+final = Table([goodname, goodra, gooddec, goodstarage, goodmass, goodradius, goodmm, goodplasma, f, phi_kin, phi_mag], names=['NAME', 'RA', 'DEC', 'AGE', 'MASS [Mj]', 'RADIUS [Rj]', 'MAG_MOM [MMj]', 'PLASMA_FRQ [MHz]', 'FRQ [MHz]', 'PHI_KIN [mJy]', 'PHI_MAG [mJy]'])
+ascii.write(final, 'all_results_unconfirmed.csv', format='csv')
+
+
 
 min = min(goodstarage)
 max = max(goodstarage)
@@ -236,6 +240,8 @@ goodstaragecolor = goodstarage[:]
 for i in range(len(goodstarage)):
     goodstaragecolor[i] = (goodstarage[i] - min) / (max-min)
 colors = plt.cm.gray(goodstaragecolor)
+
+
 
 import matplotlib.patches as patches
 plt.figure()
@@ -255,15 +261,6 @@ plt.yscale('log')
 plt.scatter(goodstarage, phi_kin, marker='o', c=colors)
 plt.xlabel('Age [Gyr]')
 plt.ylabel('flux [Jy]')
-# plt.subplot(122)
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.plot(f, phi_mag, 'ro')
-# plt.fill_between([0,10],[10**-7,10**-1], facecolor="none", hatch="/", edgecolor="k", linewidth=0.0)
-# plt.xlabel('frequency [MHz]')
-# plt.ylabel('flux [Jy]')
-# plt.title('Magnetic Model')
-
 # plt.subplot(122)
 # plt.xscale('log')
 # plt.yscale('log')
